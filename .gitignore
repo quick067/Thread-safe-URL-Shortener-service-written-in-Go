@@ -1,0 +1,14 @@
+# Binaries
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+main
+
+# Data
+storage.json
+
+# IDEs
+.idea/
+.vscode/
