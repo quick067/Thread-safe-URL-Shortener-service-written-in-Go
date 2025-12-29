@@ -16,14 +16,15 @@ A simple, thread-safe URL shortener service written in Go.
 ```bash
 go run .
 The server will start on http://localhost:8080.
-
+```
 2. Save a URL
 Send a POST request to /save with the URL in the body:
 
-Bash
+```Bash
 
 curl -X POST -d "[https://google.com](https://google.com)" http://localhost:8080/save
 Response: http://localhost:8080/AbCdEfGh
+```
 
 3. Use the short link
 Paste the received short URL into your browser, and you will be redirected to the original site.
