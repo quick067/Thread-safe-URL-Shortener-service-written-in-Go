@@ -1,12 +1,22 @@
-package main
+package handlers
 
 import (
+	"URL-shortener/internal/store"
 	"fmt"
 	"io"
 	"net/http"
 )
 
-func (URLs *URLShortener) saveURL(w http.ResponseWriter, r *http.Request) {
+type Handler struct {
+	Storage *store.Store
+}
+
+func (h *Handler) RegisterRoutes() {
+	http.HandleFunc("/save", h.saveURL)
+	http.HandleFunc("/", h.redirectURL)
+}
+
+func (h *Handler) saveURL(w http.ResponseWriter, r *http.Request) {
 	if r.Method == http.MethodPost {
 		data, err := io.ReadAll(r.Body)
 		if err != nil {
@@ -17,12 +27,7 @@ func (URLs *URLShortener) saveURL(w http.ResponseWriter, r *http.Request) {
 		longAdress := string(data)
 		generatedKey := keyGenerator()
 
-		URLs.mutex.Lock()
-		URLs.urlStore[generatedKey] = longAdress
-		err = URLs.saveToFile()
-		URLs.mutex.Unlock()
-
-		if err != nil {
+		if err := h.Storage.SetPair(generatedKey, longAdress); err != nil {
 			http.Error(w, "Internal server error", http.StatusInternalServerError)
 		}
 
@@ -35,17 +40,14 @@ func (URLs *URLShortener) saveURL(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (URLs *URLShortener) redirectURL(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) redirectURL(w http.ResponseWriter, r *http.Request) {
 	if r.Method == http.MethodGet {
-		path := r.URL.Path
-		if len(path) < 1{
+		path := r.URL.Path[1:]
+		if len(path) < 1 {
 			http.Error(w, "Invalid key", http.StatusBadRequest)
 		}
-		path = path[1:]
 
-		URLs.mutex.RLock()
-		value, ok := URLs.urlStore[path]
-		URLs.mutex.RUnlock()
+		value, ok := h.Storage.GetPair(path)
 
 		if ok {
 			http.Redirect(w, r, value, http.StatusFound)
