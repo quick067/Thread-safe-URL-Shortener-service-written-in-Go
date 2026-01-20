@@ -10,10 +10,10 @@ import (
 	"time"
 )
 
-func StartServer(addr string, cleanFunc func() error) {
+func StartServer(addr string, handler http.Handler, cleanFunc func() error) {
 	server := http.Server{
 		Addr:    addr,
-		Handler: nil,
+		Handler: handler,
 	}
 	log.Printf("Server starting on port: %s ...", server.Addr)
 
@@ -34,9 +34,11 @@ func StartServer(addr string, cleanFunc func() error) {
 	if err := server.Shutdown(ctx); err != nil {
 		log.Printf("error shutting down the server: %v", err)
 	}
-	log.Printf("Saving file...")
-	if err := cleanFunc(); err != nil {
-		log.Printf("error saving file: %v", err)
+	log.Printf("Closing DB connection...")
+	if cleanFunc != nil{
+		if err := cleanFunc(); err != nil {
+			log.Printf("error executing cleanFunc: %v", err)
+		}
 	}
 	log.Println("Server stopped gracefully")
 }

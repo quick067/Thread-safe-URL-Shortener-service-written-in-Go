@@ -8,7 +8,13 @@ main
 
 # Data
 storage.json
+coverage.out
+*.out
+*.html
 
 # IDEs
 .idea/
 .vscode/
+
+# Config
+.env
