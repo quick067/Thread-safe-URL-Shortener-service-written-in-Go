@@ -1,155 +1,213 @@
-# Go URL Shortener Service (v1.2)
+# Thread-Safe URL Shortener Service
 
-A robust, thread-safe URL shortener service written in Go.
-This project demonstrates **Clean Architecture**, **Concurrent Programming**, and **Graceful Shutdown** mechanisms without relying on external frameworks.
-
----
-
-## 🚀 Features
-
-* **REST API** – Simple endpoints to shorten URLs and redirect users
-* **Layered Architecture** – Clean separation into `handlers`, `store`, `config`, `server`
-* **Thread-Safety** – Concurrent access protected via `sync.RWMutex`
-* **Data Persistence** – URL mappings are saved to disk in JSON format
-* **Graceful Shutdown** – Handles `SIGINT` / `SIGTERM` to safely persist data
-* **Configuration via Environment Variables**
+A production-grade URL shortener written in **Go (Golang)**.
+This project focuses on **clean architecture**, **concurrency safety**, **security**, and **observability**, demonstrating how to build a maintainable and scalable backend service using mostly the Go standard library and a small set of well-chosen dependencies.
 
 ---
 
-## 🛠 Project Structure
+## Overview
 
-```text
-.
-├── internal/
-│   ├── config/       # Environment variable management
-│   ├── handlers/     # HTTP request handlers & business logic
-│   ├── server/       # HTTP server setup and lifecycle management
-│   └── store/        # Data storage logic (thread-safe map + file I/O)
-├── main.go           # Application entry point (Dependency Injection)
-├── go.mod            # Go module definition
-└── README.md         # Documentation
-```
+The service provides a REST API for shortening URLs and redirecting users.
+It is designed to be safe under high concurrent load, easy to test, and ready for real-world usage with authentication, monitoring, and persistent storage.
+
+Key design goals:
+
+* Clear separation of concerns
+* Predictable behavior under concurrency
+* Strong emphasis on correctness and testability
+* Production-oriented features (metrics, rate limiting, graceful failure)
 
 ---
 
-## ⚙️ Configuration
+## Key Features
 
-The application can be configured using environment variables.
+### Security and Authentication
 
-| Variable      | Description                           | Default Value  |
-| ------------- | ------------------------------------- | -------------- |
-| `SERVER_PORT` | Port on which the HTTP server runs    | `:8080`        |
-| `FILENAME`    | JSON file used for persistent storage | `storage.json` |
+* **JWT Authentication**
+  Secure access to protected endpoints using JSON Web Tokens (access tokens).
+
+* **Password Hashing**
+  User passwords are hashed with `bcrypt` before being stored in the database.
+
+* **Rate Limiting**
+  IP-based rate limiting using the Token Bucket algorithm to mitigate abuse and denial-of-service attacks.
+
+* **Input Validation**
+  Strict validation of URLs and custom aliases to prevent invalid or malicious input.
 
 ---
 
-## 📦 Getting Started
+### Observability and Monitoring
+
+* **Prometheus Metrics**
+  Built-in Prometheus integration via the `/metrics` endpoint, exposing:
+
+  * Total number of HTTP requests
+  * Response status code counters (2xx, 4xx, 5xx)
+  * Request duration / latency
+
+* **Structured Logging**
+  HTTP middleware logs request method, path, status, duration, and remote IP.
+
+---
+
+### Storage and Data Management
+
+* **PostgreSQL Backend**
+  Persistent storage for users and URL mappings.
+
+* **Concurrency Safety**
+  All operations are safe under concurrent access, ensuring data consistency.
+
+* **Conflict Handling**
+  Graceful handling of duplicate aliases with proper HTTP 409 (Conflict) responses.
+
+---
+
+### Configuration and Architecture
+
+* **Flexible Configuration**
+  Configuration can be provided via:
+
+  * Environment variables
+  * Command-line flags
+    Priority order: Environment Variables → Flags → Defaults.
+
+* **Clean Architecture**
+  Clear separation between layers:
+
+  * `handlers` — HTTP layer
+  * `service` — business logic
+  * `store` — data access layer
+
+* **Dependency Injection**
+  Services and storage implementations are injected, enabling easy testing and modularity.
+
+---
+
+### Testing
+
+* **High Test Coverage**
+  Unit tests cover handlers, services, and middleware.
+
+* **Mock-Based Testing**
+  Database interactions are mocked to isolate business logic during tests.
+
+* **Edge Case Coverage**
+  Tests include validation failures, conflicts, and internal error scenarios.
+
+---
+
+## Technology Stack
+
+* **Language:** Go (Golang)
+* **Database:** PostgreSQL
+* **HTTP:** `net/http`
+* **Authentication:** `golang-jwt/jwt/v5`
+* **Metrics:** `prometheus/client_golang`
+* **Rate Limiting:** `golang.org/x/time/rate`
+* **Configuration:** `flag`, `os`
+
+---
+
+## Getting Started
 
 ### Prerequisites
 
-* Go **1.20+** installed
+* Go 1.22 or newer
+* PostgreSQL instance
+
+---
 
 ### Installation
 
-```bash
-git clone https://github.com/your-username/your-repo-name.git
-cd your-repo-name
-```
-
----
-
-## ▶️ Running the Application
-
-### Default Run
+Clone the repository:
 
 ```bash
-go run .
+git clone https://github.com/quick067/Thread-safe-URL-Shortener-service-written-in-Go.git
+cd Thread-safe-URL-Shortener-service-written-in-Go
 ```
 
-### Custom Configuration (Linux / macOS)
+---
+
+### Configuration
+
+Set environment variables (or use a `.env` file):
 
 ```bash
-SERVER_PORT=":9090" FILENAME="my_db.json" go run .
-```
-
-### Custom Configuration (Windows PowerShell)
-
-```powershell
-$env:SERVER_PORT=":9090"
-$env:FILENAME="my_db.json"
-go run .
+export SERVER_ADDRESS=":8080"
+export BASE_URL="http://localhost:8080"
+export DATABASE_DSN="postgres://user:password@localhost:5432/shortener?sslmode=disable"
+export JWT_SECRET="your_super_secret_key"
 ```
 
 ---
 
-## 🧪 Running Tests
+### Running the Service
+
+Using environment variables:
 
 ```bash
-go test ./... -v
+go run cmd/shortener/main.go
 ```
 
----
-
-## 🔌 API Usage
-
-### 1. Save a URL
-
-**Endpoint:**
-`POST /save`
-
-**Body:** raw string containing the URL
+Using command-line flags:
 
 ```bash
-curl -X POST -d "https://www.google.com" http://localhost:8080/save
-```
-
-**Response:**
-
-```
-http://localhost:8080/AbCdEfGh
+go run cmd/shortener/main.go -a :9090 -b http://my-shortener.com
 ```
 
 ---
 
-### 2. Redirect
+## API Endpoints
 
-**Endpoint:**
-`GET /{short_key}`
+| Method | Endpoint    | Auth Required | Description                          |
+| -----: | ----------- | ------------- | ------------------------------------ |
+|   POST | `/register` | No            | Create a new user account            |
+|   POST | `/login`    | No            | Authenticate and receive a JWT token |
+|   POST | `/save`     | Yes           | Shorten a URL (JSON body)            |
+|    GET | `/{alias}`  | No            | Redirect to the original URL         |
+|    GET | `/metrics`  | No            | Prometheus metrics endpoint          |
 
-Open the generated short URL in your browser or test via curl:
+---
+
+## Testing
+
+Run all tests:
 
 ```bash
-curl -v http://localhost:8080/AbCdEfGh
+go test ./...
+```
+
+Check test coverage:
+
+```bash
+go test -coverprofile=coverage.out ./...
+go tool cover -html=coverage.out
 ```
 
 ---
 
-## 🛡 Graceful Shutdown
+## Project Structure
 
-To test safe shutdown behavior:
-
-1. Run the server
-2. Create several short URLs
-3. Press **Ctrl + C**
-
-The application will:
-
-* Intercept the shutdown signal
-* Save all in-memory data to disk
-* Exit cleanly without data loss
-
----
-
-## 💻 Technologies Used
-
-* **Language:** Go (Golang)
-* **Standard Library Only**
-
-  * `net/http` — HTTP server
-  * `sync` — concurrency primitives
-  * `encoding/json` — serialization
-  * `os/signal`, `context` — graceful shutdown handling
+```text
+.
+├── cmd
+│   └── shortener
+│       └── main.go        # Application entry point
+├── internal
+│   ├── config             # Configuration (env + flags)
+│   ├── handlers           # HTTP handlers
+│   ├── middleware         # Auth, logging, rate limiting, metrics
+│   ├── service            # Business logic
+│   ├── store              # PostgreSQL data access layer
+│   └── mocks              # Mocks for unit testing
+├── go.mod
+└── README.md
+```
 
 ---
 
-✅ **Result:** A clean, idiomatic, production-style Go service demonstrating concurrency, architecture, and reliability.
+## Author
+
+Developed by **quick067** as part of an advanced Go backend engineering learning path.
