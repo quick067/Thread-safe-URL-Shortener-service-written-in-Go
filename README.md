@@ -1,47 +1,155 @@
-# Go URL Shortener
+# Go URL Shortener Service (v1.2)
 
-A simple, thread-safe URL shortener service written in Go.
+A robust, thread-safe URL shortener service written in Go.
+This project demonstrates **Clean Architecture**, **Concurrent Programming**, and **Graceful Shutdown** mechanisms without relying on external frameworks.
 
-## Features
+---
 
-- **Shorten URLs**: Converts long URLs into short keys.
-- **Redirection**: Redirects users to the original URL.
-- **Thread-Safe**: Uses `sync.RWMutex` to handle concurrent requests safely.
-- **Persistence**: Saves data to a JSON file (`storage.json`) to survive server restarts.
-- **Testing**: Includes unit tests for handlers.
+## 🚀 Features
 
-## Usage
+* **REST API** – Simple endpoints to shorten URLs and redirect users
+* **Layered Architecture** – Clean separation into `handlers`, `store`, `config`, `server`
+* **Thread-Safety** – Concurrent access protected via `sync.RWMutex`
+* **Data Persistence** – URL mappings are saved to disk in JSON format
+* **Graceful Shutdown** – Handles `SIGINT` / `SIGTERM` to safely persist data
+* **Configuration via Environment Variables**
 
-### 1. Run the server
+---
+
+## 🛠 Project Structure
+
+```text
+.
+├── internal/
+│   ├── config/       # Environment variable management
+│   ├── handlers/     # HTTP request handlers & business logic
+│   ├── server/       # HTTP server setup and lifecycle management
+│   └── store/        # Data storage logic (thread-safe map + file I/O)
+├── main.go           # Application entry point (Dependency Injection)
+├── go.mod            # Go module definition
+└── README.md         # Documentation
+```
+
+---
+
+## ⚙️ Configuration
+
+The application can be configured using environment variables.
+
+| Variable      | Description                           | Default Value  |
+| ------------- | ------------------------------------- | -------------- |
+| `SERVER_PORT` | Port on which the HTTP server runs    | `:8080`        |
+| `FILENAME`    | JSON file used for persistent storage | `storage.json` |
+
+---
+
+## 📦 Getting Started
+
+### Prerequisites
+
+* Go **1.20+** installed
+
+### Installation
+
+```bash
+git clone https://github.com/your-username/your-repo-name.git
+cd your-repo-name
+```
+
+---
+
+## ▶️ Running the Application
+
+### Default Run
+
 ```bash
 go run .
-The server will start on http://localhost:8080.
-```
-### 2. Save a URL
-Send a POST request to /save with the URL in the body:
-
-```Bash
-
-curl -X POST -d "[https://google.com](https://google.com)" http://localhost:8080/save
-Response: http://localhost:8080/AbCdEfGh
 ```
 
-### 3. Use the short link
-Paste the received short URL into your browser, and you will be redirected to the original site.
+### Custom Configuration (Linux / macOS)
 
-## Project Structure
+```bash
+SERVER_PORT=":9090" FILENAME="my_db.json" go run .
+```
 
-main.go - Server entry point and setup.
+### Custom Configuration (Windows PowerShell)
 
-handlers.go - HTTP handlers (saveURL, redirectURL).
+```powershell
+$env:SERVER_PORT=":9090"
+$env:FILENAME="my_db.json"
+go run .
+```
 
-structs.go - Data structures and file I/O logic.
+---
 
-utils.go - Key generator.
+## 🧪 Running Tests
 
-handlers_test.go - Unit tests.
+```bash
+go test ./... -v
+```
 
-## Technologies
+---
 
-Go (Golang)
-Standard library (net/http, encoding/json, sync)
+## 🔌 API Usage
+
+### 1. Save a URL
+
+**Endpoint:**
+`POST /save`
+
+**Body:** raw string containing the URL
+
+```bash
+curl -X POST -d "https://www.google.com" http://localhost:8080/save
+```
+
+**Response:**
+
+```
+http://localhost:8080/AbCdEfGh
+```
+
+---
+
+### 2. Redirect
+
+**Endpoint:**
+`GET /{short_key}`
+
+Open the generated short URL in your browser or test via curl:
+
+```bash
+curl -v http://localhost:8080/AbCdEfGh
+```
+
+---
+
+## 🛡 Graceful Shutdown
+
+To test safe shutdown behavior:
+
+1. Run the server
+2. Create several short URLs
+3. Press **Ctrl + C**
+
+The application will:
+
+* Intercept the shutdown signal
+* Save all in-memory data to disk
+* Exit cleanly without data loss
+
+---
+
+## 💻 Technologies Used
+
+* **Language:** Go (Golang)
+* **Standard Library Only**
+
+  * `net/http` — HTTP server
+  * `sync` — concurrency primitives
+  * `encoding/json` — serialization
+  * `os/signal`, `context` — graceful shutdown handling
+
+---
+
+✅ **Result:** A clean, idiomatic, production-style Go service demonstrating concurrency, architecture, and reliability.
