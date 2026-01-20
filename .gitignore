@@ -8,9 +8,14 @@ main
 
 # Data
 storage.json
+coverage
 coverage.out
 *.out
 *.html
+
+# Logs
+*.log
+log/
 
 # IDEs
 .idea/
