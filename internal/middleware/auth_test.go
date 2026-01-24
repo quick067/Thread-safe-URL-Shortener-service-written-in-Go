@@ -20,8 +20,8 @@ func TestAuthMiddleware_BadRequest(t *testing.T) {
 	recorder := httptest.NewRecorder()
 	handleToTest.ServeHTTP(recorder, req)
 
-	if recorder.Code != http.StatusBadRequest {
-		t.Errorf("Expected: %d, got: %d", http.StatusBadRequest, recorder.Code)
+	if recorder.Code != http.StatusUnauthorized {
+		t.Errorf("Expected: %d, got: %d", http.StatusUnauthorized, recorder.Code)
 	}
 }
 
@@ -67,8 +67,8 @@ func TestAuthMiddleware_InvalidFormat(t *testing.T) {
 
 	handlerToTest.ServeHTTP(recorder, req)
 
-	if recorder.Code != http.StatusBadRequest{
-		t.Errorf("Expected: %d, got: %d", http.StatusBadRequest, recorder.Code)
+	if recorder.Code != http.StatusUnauthorized{
+		t.Errorf("Expected: %d, got: %d", http.StatusUnauthorized, recorder.Code)
 	}
 }
 

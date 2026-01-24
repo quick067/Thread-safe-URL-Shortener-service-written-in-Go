@@ -14,7 +14,7 @@ func AuthMiddleware(next http.Handler, secretKey string) http.Handler {
 		tokenString := r.Header.Get("Authorization")
 		tokenString = strings.TrimPrefix(tokenString, "Bearer ")
 		if tokenString == "" {
-			http.Error(w, "Empty token", http.StatusBadRequest)
+			http.Error(w, "Empty token", http.StatusUnauthorized)
 			return 
 		}
 
